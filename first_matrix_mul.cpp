@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-#define DATA_SIZE 1000
+#define DATA_SIZE 100
 
 using namespace std;
 
@@ -33,12 +33,19 @@ cl_program load_program(cl_context context, const char* filename)
 
     // create and build program 
     const char* source = &data[0];
+    cl_int result;
     cl_program program = clCreateProgramWithSource(context, 1, &source, 0, 0);
     if(program == 0) 
+        {
+        cout << "HI I am here. " << endl;
         return 0;
-
-    if(clBuildProgram(program, 0, 0, 0, 0, 0) != CL_SUCCESS) 
+        }
+    result = clBuildProgram(program, 0, 0, 0, 0, 0);
+    if(result != CL_SUCCESS) 
+        {
+        cout << "Hi! Here is a fucking bug: " << result << endl;
         return 0;
+        }
 
     return program;
     }
@@ -96,6 +103,7 @@ int main()
     vector< vector<float> > b( DATA_SIZE, vector<float>( DATA_SIZE ) );
     vector< vector<float> > result_seq( DATA_SIZE, vector<float>( DATA_SIZE ) );
     vector< vector<float> > result_cl( DATA_SIZE, vector<float>( DATA_SIZE ) );
+    cl_int data_size_parameter = DATA_SIZE;
     // float *ptr_a = a[0];
     // float *ptr_b = b[0];
     // float *ptr_result_cl = result_cl[0];
@@ -115,6 +123,7 @@ int main()
     cl_mem cl_a = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, &a[0], NULL);
     cl_mem cl_b = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, &b[0], NULL);
     cl_mem cl_res = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, NULL, NULL);
+    //cl_mem cl_data_size = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &data_size_parameter, NULL);
     if(cl_a == 0 || cl_b == 0 || cl_res == 0) 
         {
         cerr << "Can't create OpenCL buffer\n";
@@ -151,11 +160,11 @@ int main()
         return 0;
         }
 
-    cl_int cl_data_size = DATA_SIZE;
+    
     clSetKernelArg(multiplier, 0, sizeof(cl_mem), &cl_a);
     clSetKernelArg(multiplier, 1, sizeof(cl_mem), &cl_b);
     clSetKernelArg(multiplier, 2, sizeof(cl_mem), &cl_res);
-    clSetKernelArg(multiplier, 3, sizeof(cl_int), &cl_data_size);
+    //clSetKernelArg(multiplier, 3, sizeof(cl_int), &cl_data_size);
 
     size_t work_size = DATA_SIZE * DATA_SIZE;
     err = clEnqueueNDRangeKernel(queue, multiplier, 2, 0, &work_size, 0, 0, 0, 0);
@@ -188,6 +197,7 @@ int main()
                 {
                 if(result_seq[i][j] != result_cl[i][j])
                     {
+                    cout << result_seq[i][j] << ": " << result_cl[i][j] << endl;
                     correct = false;
                     break;
                     }
@@ -201,7 +211,7 @@ int main()
 
         }
     else 
-        cerr << "Can't run kernel or read back data\n";
+        cerr << "Can't run kernel or read back data: " << err << endl;
     
 
     clReleaseKernel(multiplier);

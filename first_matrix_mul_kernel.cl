@@ -4,10 +4,11 @@ __kernel void multiplier(__global const float* a, __global const float* b, __glo
 	int i = (*data_size) - 1;
 	int idx = get_global_id(0);
 	int idy = get_global_id(1);
+	int idx_offset = idx * (*data_size);
 	while (i >= 0)
 		{
-		total = total + a[idx][i] * b[i][idy];
+		total = total + a[ idx_offset + i ] * b[ i*data_size + idy ];
 		--i;
 		}
-	result[idx][idy] = total;
+	result[idx_offset + idy] = total;
 	}

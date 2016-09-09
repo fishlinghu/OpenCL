@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-#define DATA_SIZE 1000000
+#define DATA_SIZE 1000
 
 using namespace std;
 
@@ -91,11 +91,14 @@ int main()
         }
 
     // Initialization of data
-    vector<float> a(DATA_SIZE), b(DATA_SIZE), res(DATA_SIZE);
-    vector< vector<float> > a;
-    vector< vector<float> > b;
-    vector< vector<float> > result_seq;
-    vector< vector<float> > result_cl;
+    // vector<float> a(DATA_SIZE), b(DATA_SIZE), res(DATA_SIZE);
+    vector< vector<float> > a( DATA_SIZE, vector<float>( DATA_SIZE ) );
+    vector< vector<float> > b( DATA_SIZE, vector<float>( DATA_SIZE ) );
+    vector< vector<float> > result_seq( DATA_SIZE, vector<float>( DATA_SIZE ) );
+    vector< vector<float> > result_cl( DATA_SIZE, vector<float>( DATA_SIZE ) );
+    // float *ptr_a = a[0];
+    // float *ptr_b = b[0];
+    // float *ptr_result_cl = result_cl[0];
     int i, j, k;
     float temp_data, total;
     
@@ -103,18 +106,15 @@ int main()
         {
         for(j = 0; j < DATA_SIZE; j++)
             {
-            temp_data = (float) rand() / RAND_MAX;
-            a[i].push_back( temp_data );
-    
-            temp_data = (float) rand() / RAND_MAX;
-            b[i].push_back( temp_data );
+            a[i][j] = (float) rand() / RAND_MAX;
+            b[i][j] = (float) rand() / RAND_MAX;
             }
         }
 
     // Allocating memory at GPU
-    cl_mem cl_a = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, a, NULL);
-    cl_mem cl_b = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, b, NULL);
-    cl_mem cl_res = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * DATA_SIZE, NULL, NULL);
+    cl_mem cl_a = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, &a[0], NULL);
+    cl_mem cl_b = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, &b[0], NULL);
+    cl_mem cl_res = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * DATA_SIZE * DATA_SIZE, NULL, NULL);
     if(cl_a == 0 || cl_b == 0 || cl_res == 0) 
         {
         cerr << "Can't create OpenCL buffer\n";
@@ -161,7 +161,7 @@ int main()
     err = clEnqueueNDRangeKernel(queue, multiplier, 2, 0, &work_size, 0, 0, 0, 0);
 
     if(err == CL_SUCCESS)
-        clEnqueueReadBuffer(queue, cl_res, CL_TRUE, 0, sizeof(float) * DATA_SIZE * DATA_SIZE, &res[0], 0, 0, 0);    
+        clEnqueueReadBuffer(queue, cl_res, CL_TRUE, 0, sizeof(float) * DATA_SIZE * DATA_SIZE, &result_cl[0], 0, 0, 0);    
 
     /** sequential version **/
     for(i=0; i<DATA_SIZE; i++)

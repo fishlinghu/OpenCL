@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <sys/time.h>
+#include <time.h>
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else
@@ -12,6 +14,16 @@
 #define DATA_SIZE 10000
 
 using namespace std;
+
+struct timespec kernel_start_time;
+struct timespec kernel_end_time;
+
+double gettime() 
+    {
+    struct timeval t;
+    gettimeofday(&t,NULL);
+    return t.tv_sec+t.tv_usec*1e-6;
+    }
 
 cl_program load_program(cl_context context, const char* filename)
     {
@@ -151,7 +163,7 @@ int main()
     clGetDeviceInfo(devices_for_compute[0], CL_DEVICE_NAME, cb, &devname[0], 0);
     cout << "Device: " << devname.c_str() << "\n";
 
-    cl_command_queue queue = clCreateCommandQueueWithProperties(context, devices_for_compute[0], NULL, 0);
+    cl_command_queue queue = clCreateCommandQueue(context, devices_for_compute[0], 0, 0);
     if(queue == 0) 
         {
         cerr << "Can't create command queue\n";
@@ -214,35 +226,39 @@ int main()
 
     size_t work_size = DATA_SIZE;
     cl_int err;
+    clock_gettime(CLOCK_REALTIME, &kernel_start_time);
     err = clEnqueueNDRangeKernel(queue, multiply, 1, 0, &work_size, 0, 0, 0, 0);
 
     if(err == CL_SUCCESS) 
         {
         err = clEnqueueReadBuffer(queue, cl_res, CL_TRUE, 0, sizeof(float) * DATA_SIZE, &res[0], 0, 0, 0);
         }
+    clock_gettime(CLOCK_REALTIME, &kernel_end_time);
 
     if(err == CL_SUCCESS) 
         {
         bool correct = true;
-    for(int i = 0; i < DATA_SIZE; i++) 
-        {
-        if(a[i] + b[i] != res[i]) 
+        for(int i = 0; i < DATA_SIZE; i++) 
             {
-            correct = false;
-            break;
+            if(a[i] + b[i] != res[i]) 
+                {
+                correct = false;
+                break;
+                }
+            }
+        if(correct) 
+            {
+            // cout << "Data is correct\n";
+            }
+        else   
+            {
+            cout << "Data is incorrect\n";
             }
         }
-
-    if(correct) {
-    std::cout << "Data is correct\n";
-    }
-    else {
-    std::cout << "Data is incorrect\n";
-    }
-    }
-    else {
-    std::cerr << "Can't run kernel or read back data\n";
-    }
+    else 
+        {
+        cerr << "Can't run kernel or read back data\n";
+        }
 
     clReleaseKernel(multiply);
     clReleaseProgram(program);

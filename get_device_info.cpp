@@ -82,7 +82,7 @@ int main()
     clGetDeviceInfo(devices[0], CL_DEVICE_NAME, cb, &devname[0], 0);
     cout << "Device: " << devname.c_str() << "\n";
 
-    cl_command_queue queue = clCreateCommandQueue(context, devices[0], 0, 0);
+    cl_command_queue queue = clCreateCommandQueueWithProperties(context, devices[0], NULL, 0);
     if(queue == 0) 
         {
         cerr << "Can't create command queue\n";

@@ -56,6 +56,23 @@ cl_program load_program(cl_context context, const char* filename)
         return 0;
         }
 
+    size_t size;
+    cl_int status;
+    status = clGetProgramInfo( program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &size, NULL);
+
+    unsigned char * binary = new unsigned char [ size ];
+    status = clGetProgramInfo( program, CL_PROGRAM_BINARIES, size, &binary, NULL ); 
+
+    int i = 0;
+    while(i < size)
+        {
+        cout << binary[i];
+        ++i;
+        }
+    cout << endl;
+
+    delete [] binary;
+
     return program;
     }
 
@@ -259,6 +276,8 @@ int main()
         {
         cerr << "Can't run kernel or read back data\n";
         }
+
+
 
     clReleaseKernel(multiply);
     clReleaseProgram(program);

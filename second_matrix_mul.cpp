@@ -243,14 +243,23 @@ int main()
 
     size_t work_size = DATA_SIZE;
     cl_int err;
+    cl_event event;
     clock_gettime(CLOCK_REALTIME, &kernel_start_time);
-    err = clEnqueueNDRangeKernel(queue, multiply, 1, 0, &work_size, 0, 0, 0, 0);
+    err = clEnqueueNDRangeKernel(queue, multiply, 1, 0, &work_size, 0, 0, 0, &event);
 
     if(err == CL_SUCCESS) 
         {
         err = clEnqueueReadBuffer(queue, cl_res, CL_TRUE, 0, sizeof(float) * DATA_SIZE, &res[0], 0, 0, 0);
         }
     clock_gettime(CLOCK_REALTIME, &kernel_end_time);
+
+    cl_ulong time_start, time_end;
+    double total_time;
+
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    total_time = time_end - time_start;
+    printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
 
     if(err == CL_SUCCESS) 
         {
@@ -276,8 +285,6 @@ int main()
         {
         cerr << "Can't run kernel or read back data\n";
         }
-
-
 
     clReleaseKernel(multiply);
     clReleaseProgram(program);

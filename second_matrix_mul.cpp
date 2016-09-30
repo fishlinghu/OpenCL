@@ -11,7 +11,7 @@
 #include <CL/cl.h>
 #endif
 
-#define DATA_SIZE 10000
+//#define DATA_SIZE 10000
 
 using namespace std;
 
@@ -23,6 +23,26 @@ double gettime()
     struct timeval t;
     gettimeofday(&t,NULL);
     return t.tv_sec+t.tv_usec*1e-6;
+    }
+
+void print_timer_message(timespec start_time, timespec end_time)
+    {
+    printf("\n***************** Total time *****************\n");
+    printf("s_time.tv_sec:%ld, s_time.tv_nsec:%09ld\n", start_time.tv_sec, start_time.tv_nsec);
+    printf("e_time.tv_sec:%ld, e_time.tv_nsec:%09ld\n", end_time.tv_sec, end_time.tv_nsec);
+    if(end_time.tv_nsec > start_time.tv_nsec)
+        {
+        printf("[diff_time:%ld.%09ld sec]\n",
+        end_time.tv_sec - start_time.tv_sec,
+        end_time.tv_nsec - start_time.tv_nsec);
+        }
+    else
+        {
+        printf("[diff_time:%ld.%09ld sec]\n",
+        end_time.tv_sec - start_time.tv_sec - 1,
+        end_time.tv_nsec - start_time.tv_nsec + 1000*1000*1000);
+        }
+    return;
     }
 
 cl_program load_program(cl_context context, const char* filename)
@@ -76,8 +96,9 @@ cl_program load_program(cl_context context, const char* filename)
     return program;
     }
 
-int main() 
+int main(int argc, char* argv[]) 
     {
+    long int DATA_SIZE = atoi( argv[1] );
     // cout << 111111111111111 << endl;
     int i, j, k;
     char* info;
@@ -246,12 +267,14 @@ int main()
     cl_event event;
     clock_gettime(CLOCK_REALTIME, &kernel_start_time);
     err = clEnqueueNDRangeKernel(queue, multiply, 1, 0, &work_size, 0, 0, 0, &event);
+    clFinish(queue);
+    clock_gettime(CLOCK_REALTIME, &kernel_end_time);
+    print_timer_message(kernel_start_time, kernel_end_time);
 
     if(err == CL_SUCCESS) 
         {
         err = clEnqueueReadBuffer(queue, cl_res, CL_TRUE, 0, sizeof(float) * DATA_SIZE, &res[0], 0, 0, 0);
         }
-    clock_gettime(CLOCK_REALTIME, &kernel_end_time);
 
     cl_ulong time_start, time_end;
     double total_time;
@@ -260,8 +283,8 @@ int main()
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
     total_time = time_end - time_start;
     printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
-
-    if(err == CL_SUCCESS) 
+    cout << "Err code: " << err << endl;
+    /*if(err == CL_SUCCESS) 
         {
         bool correct = true;
         for(int i = 0; i < DATA_SIZE; i++) 
@@ -284,7 +307,7 @@ int main()
     else 
         {
         cerr << "Can't run kernel or read back data\n";
-        }
+        }*/
 
     clReleaseKernel(multiply);
     clReleaseProgram(program);

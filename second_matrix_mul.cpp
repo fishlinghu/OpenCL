@@ -222,6 +222,10 @@ int main(int argc, char* argv[])
     cl_mem cl_a = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE, &a[0], NULL);
     cl_mem cl_b = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_float) * DATA_SIZE, &b[0], NULL);
     cl_mem cl_res = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(cl_float) * DATA_SIZE, NULL, NULL);
+
+    cl_long d_data_size = DATA_SIZE;
+    cl_mem cl_data_size = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(cl_long), &d_data_size, NULL);
+
     if(cl_a == 0 || cl_b == 0 || cl_res == 0) 
         {
         cerr << "Can't create OpenCL buffer\n";
@@ -258,9 +262,12 @@ int main(int argc, char* argv[])
         return 0;
         }
 
+
+
     clSetKernelArg(multiply, 0, sizeof(cl_mem), &cl_a);
     clSetKernelArg(multiply, 1, sizeof(cl_mem), &cl_b);
     clSetKernelArg(multiply, 2, sizeof(cl_mem), &cl_res);
+    clSetKernelArg(multiply, 3, sizeof(cl_mem), &cl_data_size);
 
     size_t work_size = DATA_SIZE;
     cl_int err;
@@ -284,6 +291,14 @@ int main(int argc, char* argv[])
     total_time = time_end - time_start;
     printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
     cout << "Err code: " << err << endl;
+    
+    
+
+    /*for(int i = 0; i < DATA_SIZE; ++i)
+        {
+        cout << res[i] << endl;
+        }*/
+
     /*if(err == CL_SUCCESS) 
         {
         bool correct = true;

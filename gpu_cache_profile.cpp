@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
     clGetPlatformIDs(platformCount, platforms, NULL);
  
     // for each platform print all attributes
-    for (i = 0; i < platformCount; i++) 
+    /*for (i = 0; i < platformCount; i++) 
         {
         printf("\n %d. Platform \n", i+1);
  
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
             free(info);
             }
         printf("\n");
-        }
+        }*/
     ////
     char* value;
     size_t valueSize;
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
         clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
  
         // for each device print critical attributes
-        for (j = 0; j < deviceCount; j++) 
+        /*for (j = 0; j < deviceCount; j++) 
             {
             for (k = 0; k < device_attributeCount; k++)
                 {
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
                 printf("%d.%d %s: %d\n", j+1, k+device_attributeCount+device_attributeCount_2, device_attributeNames_3[k], deviceMemInfo);
                 }
             printf("Size of cl_long: %d\n", sizeof(cl_long));
-            }
+            }*/
         free(devices);
         }
 
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
     string devname;
     devname.resize(cb);
     clGetDeviceInfo(devices_for_compute[0], CL_DEVICE_NAME, cb, &devname[0], 0);
-    cout << "Device: " << devname.c_str() << "\n";
+    //cout << "Device: " << devname.c_str() << "\n";
 
     cl_command_queue queue = clCreateCommandQueue(context, devices_for_compute[0], 0, 0);
     if(queue == 0) 
@@ -358,14 +358,14 @@ int main(int argc, char* argv[])
                 err = clEnqueueReadBuffer(queue, cl_a, CL_TRUE, 0, sizeof(long int) * DATA_SIZE, &a[0], 0, 0, 0);
                 }*/
 
-            cl_ulong time_start, time_end;
-            double total_time;
+            //cl_ulong time_start, time_end;
+            //double total_time;
 
-            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-            total_time = time_end - time_start;
-            printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
-            cout << "Err code: " << err << endl;
+            //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+            //total_time = time_end - time_start;
+            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
+            //cout << "Err code: " << err << endl;
 
             clReleaseKernel(stride_array);
             clReleaseProgram(program);

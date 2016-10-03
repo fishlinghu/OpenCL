@@ -83,13 +83,13 @@ cl_program load_program(cl_context context, const char* filename)
     unsigned char * binary = new unsigned char [ size ];
     status = clGetProgramInfo( program, CL_PROGRAM_BINARIES, size, &binary, NULL ); 
 
-    int i = 0;
+    /*int i = 0;
     while(i < size)
         {
         cout << binary[i];
         ++i;
         }
-    cout << endl;
+    cout << endl;*/
 
     delete [] binary;
 

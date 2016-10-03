@@ -144,8 +144,22 @@ int main(int argc, char* argv[])
     cl_uint deviceCount;
     cl_device_id* devices;
     
-    const char* device_attributeNames[5] = { "Device", "Vendor", "Hardware version", "Software version", "OpenCL C version"};
-    const cl_device_info device_attributeTypes[5] = { CL_DEVICE_NAME, CL_DEVICE_VENDOR, CL_DEVICE_VERSION, CL_DRIVER_VERSION, CL_DEVICE_OPENCL_C_VERSION};
+    const char* device_attributeNames[5] = 
+        { 
+        "Device", 
+        "Vendor", 
+        "Hardware version", 
+        "Software version", 
+        "OpenCL C version"
+        };
+    const cl_device_info device_attributeTypes[5] = 
+        { 
+        CL_DEVICE_NAME, 
+        CL_DEVICE_VENDOR, 
+        CL_DEVICE_VERSION, 
+        CL_DRIVER_VERSION, 
+        CL_DEVICE_OPENCL_C_VERSION
+        };
     const int device_attributeCount = 5;
 
     cl_uint clAttrUnits;
@@ -155,7 +169,24 @@ int main(int argc, char* argv[])
         CL_DEVICE_MAX_CLOCK_FREQUENCY, 
         CL_DEVICE_MAX_COMPUTE_UNITS};
     const int device_attributeCount_2 = 3;
- 
+
+    cl_ulong deviceMemInfo;
+    const char* device_attributeNames_3[4] = 
+        { 
+        "Global device memory size (bytes)",
+        "Global memory cache size (bytes)",
+        "Global memory cache line size (bytes)",
+        "Local memory arena size (bytes)"
+        };
+    const cl_device_info device_attributeTypes_3[4] = 
+        { 
+        CL_DEVICE_GLOBAL_MEM_SIZE,
+        CL_DEVICE_GLOBAL_MEM_CACHE_SIZE, 
+        CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, 
+        CL_DEVICE_LOCAL_MEM_SIZE
+        };
+    const int device_attributeCount_3 = 4;
+
     for (i = 0; i < platformCount; i++) 
         {
         // for each platform, get all devices on the platform
@@ -180,6 +211,12 @@ int main(int argc, char* argv[])
                 clGetDeviceInfo(devices[j], device_attributeTypes_2[k], sizeof(clAttrUnits), &clAttrUnits, NULL);
                 printf("%d.%d %s: %d\n", j+1, k+device_attributeCount, device_attributeNames_2[k], clAttrUnits);
                 }
+            for (k = 0; k < device_attributeCount_3; k++)
+                {
+                clGetDeviceInfo(devices[j], device_attributeTypes_3[k], sizeof(clAttrUnits), &deviceMemInfo, NULL);
+                printf("%d.%d %s: %d\n", j+1, k+device_attributeCount+device_attributeCount_2, device_attributeNames_3[k], deviceMemInfo);
+                }
+            printf("Size of cl_long: %d\n", sizeof(cl_long));
             }
         free(devices);
         }

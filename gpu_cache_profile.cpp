@@ -274,6 +274,9 @@ int main(int argc, char* argv[])
     double tsteps;
     double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
 
+    cl_ulong time_start, time_end;
+    double total_time;
+
     cl_int stride;
     cl_long steps;
     /* Initialize output */
@@ -334,6 +337,24 @@ int main(int argc, char* argv[])
             clSetKernelArg(stride_array, 0, sizeof(cl_mem), &cl_x);
             clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_stride);
             clSetKernelArg(stride_array, 2, sizeof(cl_mem), &cl_steps);
+
+            cl_kernel stride_null_array = clCreateKernel(program, "stride_null_array", 0);
+            if(stride_null_array == 0) 
+                {
+                cerr << "Can't load kernel\n";
+                clReleaseProgram(program);
+                clReleaseMemObject(cl_x);
+                //clReleaseMemObject(cl_b);
+                //clReleaseMemObject(cl_res);
+                clReleaseCommandQueue(queue);
+                clReleaseContext(context);
+                return 0;
+                }
+
+            /* Pass argument to the device kernel */
+            clSetKernelArg(stride_null_array, 0, sizeof(cl_mem), &cl_x);
+            clSetKernelArg(stride_null_array, 1, sizeof(cl_mem), &cl_stride);
+            clSetKernelArg(stride_null_array, 2, sizeof(cl_mem), &cl_steps);
             //clSetKernelArg(stride_array, 3, sizeof(cl_mem), &cl_nextstep);
 
             /* Execution of the kernel */
@@ -347,9 +368,26 @@ int main(int argc, char* argv[])
             err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
             clFinish(queue);
             sec1 = gettime(); /* end timer */
+            //cout << err << endl;
 
             sec = sec1 - sec0;
-            loadtime = (sec*1e9)/(steps*csize);
+            //loadtime = (sec*1e9)/(steps*csize);
+
+            /*clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+            total_time = time_end - time_start;
+            printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );*/
+
+            lastsec = gettime();
+            do sec0 = gettime(); while (sec0 == lastsec);
+
+            err = clEnqueueNDRangeKernel(queue, stride_null_array, 1, 0, &work_size, 0, 0, 0, &event);
+            clFinish(queue);
+            sec1 = gettime(); /* end timer */
+
+            sec = sec - (sec1 - sec0);
+
+            loadtime = (sec*1e9)/steps;
             /* write out results in .csv format for Excel */
             printf("%4.1f,", (loadtime<0.1) ? 0.1 : loadtime);
 
@@ -358,9 +396,6 @@ int main(int argc, char* argv[])
                 err = clEnqueueReadBuffer(queue, cl_a, CL_TRUE, 0, sizeof(long int) * DATA_SIZE, &a[0], 0, 0, 0);
                 }*/
 
-            //cl_ulong time_start, time_end;
-            //double total_time;
-
             //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
             //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
             //total_time = time_end - time_start;
@@ -368,6 +403,7 @@ int main(int argc, char* argv[])
             //cout << "Err code: " << err << endl;
 
             clReleaseKernel(stride_array);
+            clReleaseKernel(stride_null_array);
             clReleaseProgram(program);
             clReleaseMemObject(cl_x);
             clReleaseMemObject(cl_stride);

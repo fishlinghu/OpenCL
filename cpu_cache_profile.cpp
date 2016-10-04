@@ -1,12 +1,14 @@
 //#include "stdafx.h"
 //#include <tchar.h>
+#include <iostream>
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
 #define ARRAY_MIN (1024) /* 1/4 smallest cache */
 #define ARRAY_MAX (4096*4096) /* 1/4 largest cache */
 
-
+using namespace std;
 
 int x[ARRAY_MAX]; /* array going to stride through */
 
@@ -41,8 +43,10 @@ int main(int argc, char* argv[])
 	{
 	int register nextstep, i, index, stride;
 	int csize;
+	unsigned long int temp_rand;
 	double steps, tsteps;
 	double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
+	srand( time(NULL) );
 	/* Initialize output */
 	printf(" ,");
 	for (stride=1; stride <= ARRAY_MAX/2; stride=stride*2)
@@ -57,8 +61,12 @@ int main(int argc, char* argv[])
 			{
 			/* Lay out path of memory references in array */
 			for (index=0; index < csize; index=index+stride)
-				x[index] = index + stride; /* pointer to next */
-			x[index-stride] = 0; /* loop back to beginning */
+				{
+				temp_rand = stride * rand();
+				x[index] = temp_rand % csize; /* pointer to next */
+				//cout << index << ": " << x[index] << endl;
+				}
+			// x[index-stride] = 0; /* loop back to beginning */
 			
 			/* Wait for timer to roll over */
 			lastsec = gettime();
@@ -70,13 +78,19 @@ int main(int argc, char* argv[])
 			nextstep = 0; /* start at beginning of path */
 			sec0 = gettime(); /* start timer */
 			do { /* repeat until collect 20 seconds */
-				for (i=stride;i!=0;i=i-1) 
-					{ /* keep samples same */
+				/*for (i=stride;i!=0;i=i-1) 
+					{ 
 					nextstep = 0;
-					do nextstep = x[nextstep]; /* dependency */
+					do nextstep = x[nextstep];
 					while (nextstep != 0);
+					}*/
+				i = 0;
+				index = 0;
+				while(i < csize)
+					{
+					index = x[index];
+					++i;
 					}
-
 				steps = steps + 1.0; /* count loop iterations */
 				sec1 = gettime(); /* end timer */
 				} while ((sec1 - sec0) < 20.0); /* collect 20 seconds */
@@ -86,11 +100,18 @@ int main(int argc, char* argv[])
 			tsteps = 0.0; /* used to match no. while iterations */
 			sec0 = gettime(); /* start timer */
 			do { /* repeat until same no. iterations as above */
-				for (i=stride;i!=0;i=i-1) 
-					{ /* keep samples same */
+				/*for (i=stride;i!=0;i=i-1) 
+					{ 
 					index = 0;
 					do index = index + stride;
 					while (index < csize);
+					}*/
+				i = 0;
+				index = 0;
+				while(i < csize)
+					{
+					++index;
+					++i;
 					}
 				tsteps = tsteps + 1.0;
 				sec1 = gettime(); /* - overhead */

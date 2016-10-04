@@ -1,4 +1,4 @@
-__kernel void stride_array(__global long int* x, __global int* stride, __global long int* num_of_steps )
+__kernel void stride_array(__global long int* x, __global int* stride, __global unsigned long int* num_of_steps )
 	{
 	long int i;
 	long int nextstep = 0;
@@ -7,9 +7,10 @@ __kernel void stride_array(__global long int* x, __global int* stride, __global 
 		{
 		nextstep = x[nextstep];
 		}
+	x[0] = i;
 	}
 
-__kernel void stride_null_array(__global long int* x, __global int* stride, __global long int* num_of_steps )
+__kernel void stride_null_array(__global long int* x, __global int* stride, __global unsigned long int* num_of_steps )
 	{
 	long int i;
 	long int nextstep = 0;

@@ -11,6 +11,7 @@
 using namespace std;
 
 int x[ARRAY_MAX]; /* array going to stride through */
+bool check_x[ARRAY_MAX];
 
 /*double get_seconds() 
 	{ 
@@ -18,6 +19,15 @@ int x[ARRAY_MAX]; /* array going to stride through */
 	_time64( &ltime );
 	return (double) ltime;
 	}*/
+void clear_check_x()
+	{
+	int i;
+	for(i = 0; i < ARRAY_MAX; ++i)
+		{
+		check_x[i] = false;
+		}
+	return;
+	}
 
 double gettime() 
     {
@@ -59,11 +69,17 @@ int main(int argc, char* argv[])
 		label(csize*sizeof(int)); /* print cache size this loop */
 		for (stride=1; stride <= csize/2; stride=stride*2) 
 			{
+			clear_check_x();
 			/* Lay out path of memory references in array */
 			for (index=0; index < csize; index=index+stride)
 				{
 				temp_rand = stride * rand();
+				while( check_x[temp_rand % csize] == true)
+					{
+					temp_rand = temp_rand + stride;
+					}
 				x[index] = temp_rand % csize; /* pointer to next */
+				check_x[ x[index] ] = true;
 				//cout << index << ": " << x[index] << endl;
 				}
 			// x[index-stride] = 0; /* loop back to beginning */
@@ -93,7 +109,7 @@ int main(int argc, char* argv[])
 					}
 				steps = steps + 1.0; /* count loop iterations */
 				sec1 = gettime(); /* end timer */
-				} while ((sec1 - sec0) < 20.0); /* collect 20 seconds */
+				} while ((sec1 - sec0) < 0.1); /* collect 20 seconds */
 
 			sec = sec1 - sec0;
 			/* Repeat empty loop to loop subtract overhead */

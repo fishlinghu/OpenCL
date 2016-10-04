@@ -273,12 +273,14 @@ int main(int argc, char* argv[])
     int csize;
     double tsteps;
     double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
-
+    unsigned long int temp_rand;
+    srand( time(NULL) );
+    
     cl_ulong time_start, time_end;
     double total_time;
 
     cl_int stride;
-    cl_long steps;
+    cl_ulong steps;
     /* Initialize output */
     printf(" ,");
     for (stride=1; stride <= ARRAY_MAX/2; stride=stride*2)
@@ -293,8 +295,13 @@ int main(int argc, char* argv[])
             {
             /* Lay out path of memory references in array */
             for (index=0; index < csize; index=index+stride)
-                x[index] = index + stride; /* pointer to next */
-            x[index-stride] = 0; /* loop back to beginning */
+                {
+                temp_rand = stride * rand();
+                x[index] = temp_rand % csize; /* pointer to next */
+                //cout << index << ": " << x[index] << endl;
+                }
+                //x[index] = index + stride; /* pointer to next */
+            //x[index-stride] = 0; /* loop back to beginning */
 
             /* Allocate memory and copy array to the device */
             cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int) * ARRAY_MAX, &x[0], NULL);
@@ -302,7 +309,8 @@ int main(int argc, char* argv[])
             cl_mem cl_stride = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &stride, NULL);
 
             steps = NUM_OF_ACCESS;
-            cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long), &steps, NULL);
+            //steps = 100000;
+            cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_ulong), &steps, NULL);
 
             /*nextstep = 0;
             cl_mem cl_nextstep = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &nextstep, NULL);*/
@@ -368,7 +376,8 @@ int main(int argc, char* argv[])
             err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
             clFinish(queue);
             sec1 = gettime(); /* end timer */
-            //cout << err << endl;
+            err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_int) * ARRAY_MAX, &x[0], 0, 0, 0);
+            //cout << x[0] << endl;
 
             sec = sec1 - sec0;
             //loadtime = (sec*1e9)/(steps*csize);

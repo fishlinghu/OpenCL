@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
     clGetDeviceInfo(devices_for_compute[0], CL_DEVICE_NAME, cb, &devname[0], 0);
     //cout << "Device: " << devname.c_str() << "\n";
 
-    cl_command_queue queue = clCreateCommandQueue(context, devices_for_compute[0], 0, 0);
+    cl_command_queue queue = clCreateCommandQueue(context, devices_for_compute[0], CL_QUEUE_PROFILING_ENABLE, 0);
     if(queue == 0) 
         {
         cerr << "Can't create command queue\n";
@@ -295,13 +295,14 @@ int main(int argc, char* argv[])
             {
             /* Lay out path of memory references in array */
             for (index=0; index < csize; index=index+stride)
-                {
-                temp_rand = stride * rand();
-                x[index] = temp_rand % csize; /* pointer to next */
+                x[index] = index + stride; /* pointer to next */
+                //{
+                //temp_rand = stride * rand();
+                //x[index] = temp_rand % csize; /* pointer to next */
                 //cout << index << ": " << x[index] << endl;
-                }
-                //x[index] = index + stride; /* pointer to next */
-            //x[index-stride] = 0; /* loop back to beginning */
+                //}
+                //
+            x[index-stride] = 0; /* loop back to beginning */
 
             /* Allocate memory and copy array to the device */
             cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int) * ARRAY_MAX, &x[0], NULL);
@@ -370,11 +371,12 @@ int main(int argc, char* argv[])
             cl_int err;
             cl_event event;
 
+            clFinish(queue);
             lastsec = gettime();
             do sec0 = gettime(); while (sec0 == lastsec);
 
             err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
-            clFinish(queue);
+            clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
             err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_int) * ARRAY_MAX, &x[0], 0, 0, 0);
             //cout << x[0] << endl;
@@ -382,21 +384,32 @@ int main(int argc, char* argv[])
             sec = sec1 - sec0;
             //loadtime = (sec*1e9)/(steps*csize);
 
-            /*clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
             clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
             total_time = time_end - time_start;
-            printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );*/
+            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
 
+            clFinish(queue);
             lastsec = gettime();
             do sec0 = gettime(); while (sec0 == lastsec);
 
             err = clEnqueueNDRangeKernel(queue, stride_null_array, 1, 0, &work_size, 0, 0, 0, &event);
-            clFinish(queue);
+            clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
 
             sec = sec - (sec1 - sec0);
 
-            loadtime = (sec*1e9)/steps;
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+            //total_time = time_end - time_start;
+            total_time = total_time - (time_end - time_start);
+
+            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
+
+
+
+            //loadtime = (sec*1e9)/steps;
+            loadtime = (total_time)/steps;
             /* write out results in .csv format for Excel */
             printf("%4.1f,", (loadtime<0.1) ? 0.1 : loadtime);
 
@@ -405,10 +418,7 @@ int main(int argc, char* argv[])
                 err = clEnqueueReadBuffer(queue, cl_a, CL_TRUE, 0, sizeof(long int) * DATA_SIZE, &a[0], 0, 0, 0);
                 }*/
 
-            //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-            //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-            //total_time = time_end - time_start;
-            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
+            
             //cout << "Err code: " << err << endl;
 
             clReleaseKernel(stride_array);

@@ -52,6 +52,7 @@ int label(int i)
 int main(int argc, char* argv[]) 
 	{
 	int register nextstep, i, index, stride;
+	int next_idx;
 	int csize;
 	unsigned long int temp_rand;
 	double steps, tsteps;
@@ -70,6 +71,7 @@ int main(int argc, char* argv[])
 		for (stride=1; stride <= csize/2; stride=stride*2) 
 			{
 			clear_check_x();
+			next_idx = 0;
 			/* Lay out path of memory references in array */
 			for (index=0; index < csize; index=index+stride)
 				{
@@ -78,8 +80,9 @@ int main(int argc, char* argv[])
 					{
 					temp_rand = temp_rand + stride;
 					}
-				x[index] = temp_rand % csize; /* pointer to next */
-				check_x[ x[index] ] = true;
+				x[next_idx] = temp_rand % csize; /* pointer to next */
+				check_x[ x[next_idx] ] = true;
+				next_idx = x[next_idx];
 				//cout << index << ": " << x[index] << endl;
 				}
 			// x[index-stride] = 0; /* loop back to beginning */
@@ -109,7 +112,7 @@ int main(int argc, char* argv[])
 					}
 				steps = steps + 1.0; /* count loop iterations */
 				sec1 = gettime(); /* end timer */
-				} while ((sec1 - sec0) < 0.1); /* collect 20 seconds */
+				} while ((sec1 - sec0) < 20.0); /* collect 20 seconds */
 
 			sec = sec1 - sec0;
 			/* Repeat empty loop to loop subtract overhead */

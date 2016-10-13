@@ -87,9 +87,10 @@ cl_program load_program(cl_context context, const char* filename)
         {
         return 0;
         }
-
-    if(clBuildProgram(program, 0, 0, 0, 0, 0) != CL_SUCCESS) 
+	int cl_err = clBuildProgram(program, 0, 0, 0, 0, 0);
+    if(cl_err != CL_SUCCESS) 
         {
+	cout << "Error code: " << cl_err << endl;
         return 0;
         }
 
@@ -320,8 +321,8 @@ int main(int argc, char* argv[])
     cl_ulong steps;
 
     int* small_arr;
-    small_arr = (int*) malloc( 64 / sizeof(cl_int) * sizeof(int) );
-    int array_len = 64 / sizeof(cl_int);
+    small_arr = (int*) malloc( 128 / sizeof(cl_int) * sizeof(int) );
+    int array_len = 128 / sizeof(cl_int);
     for(i = 0; i < array_len; ++i)
         {
         small_arr[i] = i+1;
@@ -329,7 +330,7 @@ int main(int argc, char* argv[])
     small_arr[ array_len - 1 ] = 0;
 
 
-    cl_mem cl_local_mem = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 64, &small_arr[0], NULL);
+    cl_mem cl_local_mem = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 128, &small_arr[0], NULL);
 
     steps = NUM_OF_ACCESS;
             //steps = 100000;

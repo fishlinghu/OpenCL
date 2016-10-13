@@ -13,9 +13,9 @@
 
 //#define DATA_SIZE 10000
 #define ARRAY_MIN (1024) /* 1/4 smallest cache */
-#define ARRAY_MAX (4096*4096) /* 1/4 largest cache */
+#define ARRAY_MAX (8192*8192) /* 1/4 largest cache */
 
-int x[ARRAY_MAX];/* array going to stride through */
+long int x[ARRAY_MAX];/* array going to stride through */
 
 using namespace std;
 
@@ -118,6 +118,7 @@ int main(int argc, char* argv[])
     srand( time(NULL) );
     //long int DATA_SIZE = atoi( argv[1] );
     long int NUM_OF_ACCESS = atoi( argv[1] );
+    long long int SIZE_OF_DATA = atoi( argv[2] );
     // cout << 111111111111111 << endl;
     int i, j, k;
     char* info;
@@ -264,12 +265,48 @@ int main(int argc, char* argv[])
         clReleaseContext(context);
         return 0;
         }
-
-    
     /////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
 
-    int register index;
+    cl_mem cmPinnedBufIn = NULL; 
+    cl_mem cmPinnedBufOut = NULL; 
+    cl_mem cmDevBufIn = NULL; 
+    cl_mem cmDevBufOut = NULL; 
+    unsigned char* cDataIn = NULL; 
+    unsigned char* cDataOut = NULL; 
+
+    cmPinnedBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, SIZE_OF_DATA, NULL, NULL); 
+    cmPinnedBufOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, SIZE_OF_DATA, NULL, NULL);
+    cmDevBufIn= clCreateBuffer(context, CL_MEM_READ_ONLY, SIZE_OF_DATA, NULL, NULL); 
+    cmDevBufOut= clCreateBuffer(context, CL_MEM_WRITE_ONLY, SIZE_OF_DATA, NULL, NULL);
+
+    cDataIn = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufIn, CL_TRUE, CL_MAP_WRITE, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
+    cDataOut = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufOut, CL_TRUE, CL_MAP_READ, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
+
+    cDataIn = (unsigned char*) malloc(sizeof(unsigned char) * SIZE_OF_DATA);
+    for( i = 0; i < SIZE_OF_DATA; ++i)
+        {
+        cDataIn[i] = (unsigned char)(i & 0xff); 
+        }
+
+    double trans_start, trans_end;
+    trans_start = gettime();
+    clEnqueueWriteBuffer(queue, cmDevBufIn, CL_TRUE, 0, SIZE_OF_DATA, cDataIn, 0, NULL, NULL);
+    trans_end = gettime();
+
+    clReleaseMemObject(cmPinnedBufIn);
+    clReleaseMemObject(cmPinnedBufOut);
+    clReleaseMemObject(cmDevBufIn);
+    clReleaseMemObject(cmDevBufOut);
+
+    cout << "Data Size: " << SIZE_OF_DATA << " bytes" << endl;
+    cout << "Transfer Time: " << (trans_end - trans_start)*1e9 << " ns" << endl;
+    cout << "Transfer Rate: " << SIZE_OF_DATA / ((trans_end - trans_start)*1e9) << " GB/s" << endl;
+
+    /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
+
+    long int register index;
     int csize;
     double tsteps;
     double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
@@ -305,7 +342,7 @@ int main(int argc, char* argv[])
             x[index-stride] = 0; /* loop back to beginning */
 
             /* Allocate memory and copy array to the device */
-            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int) * ARRAY_MAX, &x[0], NULL);
+            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * csize, &x[0], NULL);
 
             cl_mem cl_stride = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &stride, NULL);
 
@@ -378,7 +415,7 @@ int main(int argc, char* argv[])
             err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
             clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
-            err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_int) * ARRAY_MAX, &x[0], 0, 0, 0);
+            err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
             //cout << x[0] << endl;
 
             sec = sec1 - sec0;

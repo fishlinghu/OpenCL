@@ -62,6 +62,7 @@ int main()
         CL_DEVICE_MAX_COMPUTE_UNITS};
     const int device_attributeCount_2 = sizeof(device_attributeNames_2) / sizeof(char*);
 
+    cl_ulong deviceMemInfo;
     const char* device_attributeNames_3[4] = 
         { 
         "Global device memory size (bytes)",

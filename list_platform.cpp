@@ -61,6 +61,22 @@ int main()
         CL_DEVICE_MAX_CLOCK_FREQUENCY, 
         CL_DEVICE_MAX_COMPUTE_UNITS};
     const int device_attributeCount_2 = sizeof(device_attributeNames_2) / sizeof(char*);
+
+    const char* device_attributeNames_3[4] = 
+        { 
+        "Global device memory size (bytes)",
+        "Global memory cache size (bytes)",
+        "Global memory cache line size (bytes)",
+        "Local memory arena size (bytes)"
+        };
+    const cl_device_info device_attributeTypes_3[4] = 
+        { 
+        CL_DEVICE_GLOBAL_MEM_SIZE,
+        CL_DEVICE_GLOBAL_MEM_CACHE_SIZE, 
+        CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, 
+        CL_DEVICE_LOCAL_MEM_SIZE
+        };
+    const int device_attributeCount_3 = 4;
  
     for (i = 0; i < platformCount; i++) 
         {
@@ -118,6 +134,11 @@ int main()
                 {
                 clGetDeviceInfo(devices[j], device_attributeTypes_2[k], sizeof(clAttrUnits), &clAttrUnits, NULL);
                 printf("%d.%d %s: %d\n", j+1, k+device_attributeCount, device_attributeNames_2[k], clAttrUnits);
+                }
+            for (k = 0; k < device_attributeCount_3; k++)
+                {
+                clGetDeviceInfo(devices[j], device_attributeTypes_3[k], sizeof(clAttrUnits), &deviceMemInfo, NULL);
+                printf("%d.%d %s: %d\n", j+1, k+device_attributeCount+device_attributeCount_2, device_attributeNames_3[k], deviceMemInfo);
                 }
             }
         free(devices);

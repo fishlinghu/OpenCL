@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
         clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
  
         // for each device print critical attributes
-        /*for (j = 0; j < deviceCount; j++) 
+        for (j = 0; j < deviceCount; j++) 
             {
             for (k = 0; k < device_attributeCount; k++)
                 {
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
                 printf("%d.%d %s: %d\n", j+1, k+device_attributeCount+device_attributeCount_2, device_attributeNames_3[k], deviceMemInfo);
                 }
             printf("Size of cl_long: %d\n", sizeof(cl_long));
-            }*/
+            }
         free(devices);
         }
 

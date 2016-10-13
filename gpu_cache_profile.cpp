@@ -305,8 +305,8 @@ int main(int argc, char* argv[])
 
     /////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
-
-    long int register index;
+    
+     long int register index;
     int csize;
     double tsteps;
     double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
@@ -318,6 +318,142 @@ int main(int argc, char* argv[])
 
     cl_int stride;
     cl_ulong steps;
+
+    int* small_arr;
+    small_arr = (int*) malloc( 64 / sizeof(cl_int) * sizeof(int) );
+    int array_len = 64 / sizeof(cl_int);
+    for(i = 0; i < array_len; ++i)
+        {
+        small_arr[i] = i+1;
+        }
+    small_arr[ array_len - 1 ] = 0;
+
+
+    cl_mem cl_local_mem = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, 64, &small_arr[0], NULL);
+
+    steps = NUM_OF_ACCESS;
+            //steps = 100000;
+    cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_ulong), &steps, NULL);
+
+    /*nextstep = 0;
+            cl_mem cl_nextstep = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &nextstep, NULL);*/
+
+            /* Load program and create kernel */
+            cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
+            if(program == 0) 
+                {
+                cerr << "Can't load or build program\n";
+                clReleaseMemObject(cl_local_mem);
+                //clReleaseMemObject(cl_b);
+                //clReleaseMemObject(cl_res);
+                clReleaseCommandQueue(queue);
+                clReleaseContext(context);
+                return 0;
+                }
+
+            cl_kernel stride_array = clCreateKernel(program, "stride_array", 0);
+            if(stride_array == 0) 
+                {
+                cerr << "Can't load kernel\n";
+                clReleaseProgram(program);
+                clReleaseMemObject(cl_local_mem);
+                //clReleaseMemObject(cl_b);
+                //clReleaseMemObject(cl_res);
+                clReleaseCommandQueue(queue);
+                clReleaseContext(context);
+                return 0;
+                }
+
+            /* Pass argument to the device kernel */
+            clSetKernelArg(stride_array, 0, sizeof(cl_mem), &cl_local_mem);
+            //clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_stride);
+            clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_steps);
+
+            cl_kernel stride_null_array = clCreateKernel(program, "stride_null_array", 0);
+            if(stride_null_array == 0) 
+                {
+                cerr << "Can't load kernel\n";
+                clReleaseProgram(program);
+                clReleaseMemObject(cl_local_mem);
+                //clReleaseMemObject(cl_b);
+                //clReleaseMemObject(cl_res);
+                clReleaseCommandQueue(queue);
+                clReleaseContext(context);
+                return 0;
+                }
+
+            /* Pass argument to the device kernel */
+            clSetKernelArg(stride_null_array, 0, sizeof(cl_mem), &cl_local_mem);
+            //clSetKernelArg(stride_null_array, 1, sizeof(cl_mem), &cl_stride);
+            clSetKernelArg(stride_null_array, 1, sizeof(cl_mem), &cl_steps);
+            //clSetKernelArg(stride_array, 3, sizeof(cl_mem), &cl_nextstep);
+
+            /* Execution of the kernel */
+            size_t work_size = 1;
+            cl_int err;
+            cl_event event;
+
+            clFinish(queue);
+            lastsec = gettime();
+            do sec0 = gettime(); while (sec0 == lastsec);
+
+            err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
+            clWaitForEvents(1 , &event);
+            sec1 = gettime(); /* end timer */
+            //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
+            //cout << x[0] << endl;
+
+            sec = sec1 - sec0;
+            //loadtime = (sec*1e9)/(steps*csize);
+
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+            total_time = time_end - time_start;
+            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
+
+            clFinish(queue);
+            lastsec = gettime();
+            do sec0 = gettime(); while (sec0 == lastsec);
+
+            err = clEnqueueNDRangeKernel(queue, stride_null_array, 1, 0, &work_size, 0, 0, 0, &event);
+            clWaitForEvents(1 , &event);
+            sec1 = gettime(); /* end timer */
+
+            sec = sec - (sec1 - sec0);
+
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+            clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+            //total_time = time_end - time_start;
+            total_time = total_time - (time_end - time_start);
+
+            //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
+
+
+
+            //loadtime = (sec*1e9)/steps;
+            loadtime = (total_time)/steps;
+            /* write out results in .csv format for Excel */
+            printf("%4.1f,", (loadtime<0.1) ? 0.1 : loadtime);
+
+            /*if(err == CL_SUCCESS) 
+                {
+                err = clEnqueueReadBuffer(queue, cl_a, CL_TRUE, 0, sizeof(long int) * DATA_SIZE, &a[0], 0, 0, 0);
+                }*/
+
+            
+            //cout << "Err code: " << err << endl;
+
+            clReleaseKernel(stride_array);
+            clReleaseKernel(stride_null_array);
+            clReleaseProgram(program);
+            clReleaseMemObject(cl_local_mem);
+            //clReleaseMemObject(cl_stride);
+            clReleaseMemObject(cl_steps);
+
+    /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
+
+   
     /* Initialize output */
     printf(" ,");
     for (stride=1; stride <= ARRAY_MAX/2; stride=stride*2)
@@ -325,7 +461,7 @@ int main(int argc, char* argv[])
     printf("\n");
     
     /* Main loop for each configuration */
-    for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
+    for (csize=ARRAY_MIN; csize <= 0; csize=csize*2) 
         {
         label(csize*sizeof(int)); /* print cache size this loop */
         for (stride=1; stride <= csize/2; stride=stride*2) 

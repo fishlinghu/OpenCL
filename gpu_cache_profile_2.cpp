@@ -301,13 +301,13 @@ int main(int argc, char* argv[])
     
 
     /* Main loop for each configuration */
-    //for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
-        //{
-        //label(csize*sizeof(int)); /* print cache size this loop */
-        //for (stride=1; stride <= csize/2; stride=stride*2) 
-            //{
-    		csize = 16;
-    		stride = 2;
+    for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
+        {
+        label(csize*sizeof(int)); /* print cache size this loop */
+        for (stride=1; stride <= csize/2; stride=stride*2) 
+            {
+    		//csize = 16;
+    		//stride = 2;
             arr = new long int [csize];
             pattern_gen( arr, stride, csize );
 
@@ -317,11 +317,8 @@ int main(int argc, char* argv[])
             cl_mem cl_stride = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &stride, NULL);
 
             steps = NUM_OF_ACCESS;
-            //steps = 100000;
-            cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_ulong), &steps, NULL);
 
-            /*nextstep = 0;
-            cl_mem cl_nextstep = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &nextstep, NULL);*/
+            cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_ulong), &steps, NULL);
 
             /* Load program and create kernel */
             cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
@@ -438,9 +435,9 @@ int main(int argc, char* argv[])
 
             delete [] arr;
 
-            //}; /* end of inner for loop */
-        //printf("\n");
-        //}; /* end of outer for loop */
+            }; /* end of inner for loop */
+        printf("\n");
+        }; /* end of outer for loop */
 
     /////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////// 

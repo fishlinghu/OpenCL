@@ -13,6 +13,9 @@
 
 using namespace std;
 
+#define ARRAY_MIN (1024) /* 1/4 smallest cache */
+#define ARRAY_MAX (8192*8192) /* 1/4 largest cache */
+
 struct timespec kernel_start_time;
 struct timespec kernel_end_time;
 
@@ -281,24 +284,35 @@ int main(int argc, char* argv[])
 
    
     /* Initialize output */
+    
+    long int *arr;
+    cl_ulong time_start, time_end;
+    double total_time;
+
+    long long int csize;
+    double loadtime, lastsec, sec0, sec1, sec; /* timing variables */
+    cl_int stride;
+    cl_ulong steps;
+
     printf(" ,");
     for (stride=1; stride <= ARRAY_MAX/2; stride=stride*2)
         label(stride*sizeof(int));
     printf("\n");
     
-    long int *arr;
 
     /* Main loop for each configuration */
-    for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
-        {
-        label(csize*sizeof(int)); /* print cache size this loop */
-        for (stride=1; stride <= csize/2; stride=stride*2) 
-            {
+    //for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
+        //{
+        //label(csize*sizeof(int)); /* print cache size this loop */
+        //for (stride=1; stride <= csize/2; stride=stride*2) 
+            //{
+    		csize = 16;
+    		stride = 2;
             arr = new long int [csize];
             pattern_gen( arr, stride, csize );
 
             /* Allocate memory and copy array to the device */
-            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * csize, &x[0], NULL);
+            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * csize, &arr[0], NULL);
 
             cl_mem cl_stride = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &stride, NULL);
 
@@ -371,7 +385,7 @@ int main(int argc, char* argv[])
             err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
             clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
-            err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
+            //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
             //cout << x[0] << endl;
 
             sec = sec1 - sec0;
@@ -424,9 +438,9 @@ int main(int argc, char* argv[])
 
             delete [] arr;
 
-            }; /* end of inner for loop */
-        printf("\n");
-        }; /* end of outer for loop */
+            //}; /* end of inner for loop */
+        //printf("\n");
+        //}; /* end of outer for loop */
 
     /////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////// 

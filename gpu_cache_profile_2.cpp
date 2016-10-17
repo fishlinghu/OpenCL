@@ -14,7 +14,7 @@
 using namespace std;
 
 #define ARRAY_MIN (1024) /* 1/4 smallest cache */
-#define ARRAY_MAX (8192*8192) /* 1/4 largest cache */
+#define ARRAY_MAX (2048*2048) /* 1/4 largest cache */
 
 struct timespec kernel_start_time;
 struct timespec kernel_end_time;

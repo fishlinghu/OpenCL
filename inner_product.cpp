@@ -59,20 +59,18 @@ void print_timer_message(timespec start_time, timespec end_time)
     return;
     }
 
-void pattern_gen(long int* arr, long int stride, long int size_of_arr)
+void pattern_gen(long int* arr, long int stride, long int num_of_element)
     {
     // need to be newed outside of the function
     int i = 0;
-    while( i < size_of_arr )
+    while( i < num_of_element * stride )
     	{
-    	//if( i % stride == 0 )
-    		arr[i] = i + stride;
-    	//else
-    		//arr[i] = 0;
-        //cout << arr[i] << endl;
+    	if( i % stride == 0 )
+    		arr[i] = i + 1;
+    	else
+    		arr[i] = 0;
     	++i;
     	}
-    arr[ size_of_arr-stride ] = 0;
     return;
     }
 
@@ -287,6 +285,7 @@ int main(int argc, char* argv[])
     /* Initialize output */
     
     long int *arr;
+    long int *arr2;
     cl_ulong time_start, time_end;
     double total_time;
 
@@ -302,31 +301,39 @@ int main(int argc, char* argv[])
     
 
     /* Main loop for each configuration */
-    for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
-        {
-        label(csize*sizeof(int)); /* print cache size this loop */
-        for (stride=1; stride <= csize/2; stride=stride*2) 
+    //for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
+        //{
+        //label(csize*sizeof(int)); /* print cache size this loop */
+        for (stride=1; stride <= 256; stride=stride*2) 
             {
     		//csize = 16;
     		//stride = 2;
-            arr = new long int [csize];
-            pattern_gen( arr, stride, csize );
+            steps = NUM_OF_ACCESS;
+            
+            arr = new long int [steps * stride];
+            pattern_gen( arr, stride, steps );
+
+            arr2 = new long int [steps * stride];
+            pattern_gen( arr2, stride, steps );
+
+            
 
             /* Allocate memory and copy array to the device */
-            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * csize, &arr[0], NULL);
+            cl_mem cl_x = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * steps * stride, &arr[0], NULL);
+
+          	cl_mem cl_y = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_long) * steps * stride, &arr2[0], NULL);
 
             cl_mem cl_stride = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_int), &stride, NULL);
-
-            steps = NUM_OF_ACCESS;
 
             cl_mem cl_steps = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(cl_ulong), &steps, NULL);
 
             /* Load program and create kernel */
-            cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
+            cl_program program = load_program(context, "inner_product_kernel.cl");
             if(program == 0) 
                 {
                 cerr << "Can't load or build program\n";
                 clReleaseMemObject(cl_x);
+                clReleaseMemObject(cl_y);
                 //clReleaseMemObject(cl_b);
                 //clReleaseMemObject(cl_res);
                 clReleaseCommandQueue(queue);
@@ -334,12 +341,13 @@ int main(int argc, char* argv[])
                 return 0;
                 }
 
-            cl_kernel stride_array = clCreateKernel(program, "stride_array", 0);
-            if(stride_array == 0) 
+            cl_kernel inner_product = clCreateKernel(program, "inner_product", 0);
+            if(inner_product == 0) 
                 {
                 cerr << "Can't load kernel\n";
                 clReleaseProgram(program);
                 clReleaseMemObject(cl_x);
+                clReleaseMemObject(cl_y);
                 //clReleaseMemObject(cl_b);
                 //clReleaseMemObject(cl_res);
                 clReleaseCommandQueue(queue);
@@ -348,16 +356,18 @@ int main(int argc, char* argv[])
                 }
 
             /* Pass argument to the device kernel */
-            clSetKernelArg(stride_array, 0, sizeof(cl_mem), &cl_x);
-            clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_stride);
-            clSetKernelArg(stride_array, 2, sizeof(cl_mem), &cl_steps);
+            clSetKernelArg(inner_product, 0, sizeof(cl_mem), &cl_x);
+            clSetKernelArg(inner_product, 1, sizeof(cl_mem), &cl_y);
+            clSetKernelArg(inner_product, 2, sizeof(cl_mem), &cl_stride);
+            clSetKernelArg(inner_product, 3, sizeof(cl_mem), &cl_steps);
 
-            cl_kernel stride_null_array = clCreateKernel(program, "stride_null_array", 0);
-            if(stride_null_array == 0) 
+            cl_kernel null_loop = clCreateKernel(program, "null_loop", 0);
+            if(null_loop == 0) 
                 {
                 cerr << "Can't load kernel\n";
                 clReleaseProgram(program);
                 clReleaseMemObject(cl_x);
+                clReleaseMemObject(cl_y);
                 //clReleaseMemObject(cl_b);
                 //clReleaseMemObject(cl_res);
                 clReleaseCommandQueue(queue);
@@ -366,10 +376,10 @@ int main(int argc, char* argv[])
                 }
 
             /* Pass argument to the device kernel */
-            clSetKernelArg(stride_null_array, 0, sizeof(cl_mem), &cl_x);
-            clSetKernelArg(stride_null_array, 1, sizeof(cl_mem), &cl_stride);
-            clSetKernelArg(stride_null_array, 2, sizeof(cl_mem), &cl_steps);
-            //clSetKernelArg(stride_array, 3, sizeof(cl_mem), &cl_nextstep);
+            clSetKernelArg(null_loop, 0, sizeof(cl_mem), &cl_x);
+            clSetKernelArg(null_loop, 1, sizeof(cl_mem), &cl_y);
+            clSetKernelArg(null_loop, 2, sizeof(cl_mem), &cl_stride);
+            clSetKernelArg(null_loop, 3, sizeof(cl_mem), &cl_steps);
 
             /* Execution of the kernel */
             size_t work_size = 1;
@@ -380,7 +390,7 @@ int main(int argc, char* argv[])
             lastsec = gettime();
             do sec0 = gettime(); while (sec0 == lastsec);
 
-            err = clEnqueueNDRangeKernel(queue, stride_array, 1, 0, &work_size, 0, 0, 0, &event);
+            err = clEnqueueNDRangeKernel(queue, inner_product, 1, 0, &work_size, 0, 0, 0, &event);
             clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
             //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
@@ -394,11 +404,13 @@ int main(int argc, char* argv[])
             total_time = time_end - time_start;
             //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
 
+            ////////Run the NULL loop
+
             clFinish(queue);
             lastsec = gettime();
             do sec0 = gettime(); while (sec0 == lastsec);
 
-            err = clEnqueueNDRangeKernel(queue, stride_null_array, 1, 0, &work_size, 0, 0, 0, &event);
+            err = clEnqueueNDRangeKernel(queue, null_loop, 1, 0, &work_size, 0, 0, 0, &event);
             clWaitForEvents(1 , &event);
             sec1 = gettime(); /* end timer */
 
@@ -406,15 +418,14 @@ int main(int argc, char* argv[])
 
             clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
             clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-            //total_time = time_end - time_start;
             total_time = total_time - (time_end - time_start);
 
             //printf("\nExecution time in milliseconds = %0.3f ms\n", (total_time / 1000000.0) );
 
 
 
-            loadtime = (sec*1e9)/steps;
-            //loadtime = (total_time)/steps;
+            //loadtime = (sec*1e9)/steps;
+            loadtime = (total_time)/steps;
             /* write out results in .csv format for Excel */
             printf("%4.1f,", (loadtime<0.1) ? 0.1 : loadtime);
 
@@ -426,19 +437,21 @@ int main(int argc, char* argv[])
             
             //cout << "Err code: " << err << endl;
 
-            clReleaseKernel(stride_array);
-            clReleaseKernel(stride_null_array);
+            clReleaseKernel(inner_product);
+            clReleaseKernel(null_loop);
             clReleaseProgram(program);
             clReleaseMemObject(cl_x);
+            clReleaseMemObject(cl_y);
             clReleaseMemObject(cl_stride);
             clReleaseMemObject(cl_steps);
             //clReleaseCommandQueue(queue);
 
             delete [] arr;
+            delete [] arr2;
 
             }; /* end of inner for loop */
         printf("\n");
-        }; /* end of outer for loop */
+        //}; /* end of outer for loop */
 
     /////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////// 

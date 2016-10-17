@@ -62,6 +62,11 @@ void print_timer_message(timespec start_time, timespec end_time)
     return;
     }
 
+void pattern_gen()
+    {
+    
+    }
+
 cl_program load_program(cl_context context, const char* filename)
     {
     ifstream in(filename, std::ios_base::binary);

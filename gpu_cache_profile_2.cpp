@@ -382,7 +382,8 @@ int main(int argc, char* argv[])
     cout << "Data Size: " << SIZE_OF_DATA << " bytes" << endl;
     cout << "WriteBuffer Time: " << (trans_end - trans_start)*1e9 << " ns" << endl;
     cout << "Copy Time: " << total_time << " ns" << endl;
-    cout << "Transfer Rate: " << SIZE_OF_DATA / total_time << " GB/s" << endl;
+    cout << "Copy Time: " << sec << " sec" << endl;
+    cout << "Transfer Rate: " << SIZE_OF_DATA / 1e9 / sec << " GB/s" << endl;
 
     /////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
@@ -402,7 +403,7 @@ int main(int argc, char* argv[])
     
 
     /* Main loop for each configuration */
-    for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
+    for (csize=ARRAY_MIN; csize <= 0; csize=csize*2) 
         {
         label(csize*sizeof(int)); /* print cache size this loop */
         for (stride=1; stride <= csize/2; stride=stride*2) 

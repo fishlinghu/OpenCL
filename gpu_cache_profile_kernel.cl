@@ -29,6 +29,12 @@ __kernel void stride_null_array(__global int* x, __global long int* stride, __gl
 	x[0] = temp;
 	}
 
+__kernel void bw(__global unsigned char* src, __global unsigned char* dst)
+	{
+	int xid = get_global_id(0);
+	dst[xid] = src[xid];
+	}
+
 //__kernel void multiply( __global long int* a, __global long int* b, __global long int* c, __global int* stride, __global unsigned long int* num_of_steps )
 	//{
 	/* code */

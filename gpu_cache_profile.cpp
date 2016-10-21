@@ -300,13 +300,47 @@ int main(int argc, char* argv[])
     clEnqueueWriteBuffer(queue, cmDevBufIn, CL_TRUE, 0, SIZE_OF_DATA, cDataIn, 0, NULL, NULL);
     trans_end = gettime();
 
+    cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
+    if(program == 0) 
+        {
+        cerr << "Can't load or build program\n";
+        clReleaseMemObject(cmPinnedBufIn);
+        clReleaseMemObject(cmPinnedBufOut);
+        clReleaseMemObject(cmDevBufIn);
+        clReleaseMemObject(cmDevBufOut);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        return 0;
+        }
+
+    cl_kernel stride_array = clCreateKernel(program, "stride_array", 0);
+    if(stride_array == 0) 
+        {
+        cerr << "Can't load kernel\n";
+        clReleaseProgram(program);
+        clReleaseMemObject(cmPinnedBufIn);
+        clReleaseMemObject(cmPinnedBufOut);
+        clReleaseMemObject(cmDevBufIn);
+        clReleaseMemObject(cmDevBufOut);
+        clReleaseCommandQueue(queue);
+        clReleaseContext(context);
+        return 0;
+        }
+
+    /* Pass argument to the device kernel */
+    clSetKernelArg(stride_array, 0, sizeof(cl_mem), &cl_local_mem);
+    //clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_stride);
+    clSetKernelArg(stride_array, 1, sizeof(cl_mem), &cl_steps);
+
+    clReleaseKernel(bw);
+    clReleaseProgram(program);
     clReleaseMemObject(cmPinnedBufIn);
     clReleaseMemObject(cmPinnedBufOut);
     clReleaseMemObject(cmDevBufIn);
     clReleaseMemObject(cmDevBufOut);
 
     cout << "Data Size: " << SIZE_OF_DATA << " bytes" << endl;
-    cout << "Transfer Time: " << (trans_end - trans_start)*1e9 << " ns" << endl;
+    cout << "WriteBuffer Time: " << (trans_end - trans_start)*1e9 << " ns" << endl;
     cout << "Transfer Rate: " << SIZE_OF_DATA / ((trans_end - trans_start)*1e9) << " GB/s" << endl;
 
     /////////////////////////////////////////////////////////////////////////

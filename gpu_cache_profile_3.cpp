@@ -242,28 +242,42 @@ int main(int argc, char* argv[])
     clSetKernelArg(bw, 0, sizeof(cl_mem), &cDataIn);
     clSetKernelArg(bw, 1, sizeof(cl_mem), &cDataOut);
 
+	cl_ulong local_mem_size;
+  	clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_LOCAL_MEM_SIZE, sizeof(local_mem_size), &local_mem_size, NULL);
+  	printf("  CL_KERNEL_LOCAL_MEM_SIZE\t%u\n", local_mem_size);
 
-    size_t global_work_size = SIZE_OF_DATA;
-    size_t local_work_size = 1;
+	//CL_DEVICE_MAX_WORK_ITEM_SIZES
+     	size_t workitem_size[3];
+       	clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_COMPILE_WORK_GROUP_SIZE, sizeof(workitem_size), &workitem_size, NULL);
+        printf("  CL_KERNEL_COMPILE_WORK_GROUP_SIZES:\t%u / %u / %u \n", workitem_size[0], workitem_size[1], workitem_size[2]);
+  
+        // CL_DEVICE_MAX_WORK_GROUP_SIZE
+        size_t workgroup_size;
+        clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_WORK_GROUP_SIZE, sizeof(workgroup_size), &workgroup_size, NULL);
+        printf("  CL_KERNEL_WORK_GROUP_SIZE:\t%u\n", workgroup_size);
+                 
+    size_t global_work_size[3] = {256, 256, 256};
+    size_t local_work_size[3] = {1, 1, 1};
     cl_int err;
     cl_event event;
 
     clFinish(queue);
     lastsec = gettime();
     do sec0 = gettime(); while (sec0 == lastsec);
-
-    err = clEnqueueNDRangeKernel(queue, bw, 1, 0, &global_work_size, &local_work_size, 0, 0, &event);
-    clWaitForEvents(1 , &event);
-    sec1 = gettime(); /* end timer */
+	//cout << 1111 << endl;
+    err = clEnqueueNDRangeKernel(queue, bw, 3, NULL, global_work_size, NULL, 0, 0, &event);
+    //clWaitForEvents(1 , &event);
+    	clFinish(queue);
+	sec1 = gettime(); /* end timer */
     //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
     //cout << x[0] << endl;
-
+	//cout << 22222 << endl;
     sec = sec1 - sec0;
     //loadtime = (sec*1e9)/(steps*csize);
 
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
-    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
-    total_time = time_end - time_start;
+    //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(time_start), &time_start, NULL);
+    //clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
+    //total_time = time_end - time_start;
 
 
     clReleaseKernel(bw);
@@ -275,7 +289,7 @@ int main(int argc, char* argv[])
 
     cout << "Data Size: " << SIZE_OF_DATA << " bytes" << endl;
     cout << "WriteBuffer Time: " << (trans_end - trans_start)*1e9 << " ns" << endl;
-    cout << "Copy Time: " << total_time << " ns" << endl;
+    //cout << "Copy Time: " << total_time << " ns" << endl;
     cout << "Copy Time: " << sec << " sec" << endl;
     cout << "Transfer Rate: " << SIZE_OF_DATA / 1e9 / sec << " GB/s" << endl;
 
@@ -300,7 +314,8 @@ int main(int argc, char* argv[])
     for (csize=ARRAY_MIN; csize <= ARRAY_MAX; csize=csize*2) 
         {
         label(csize*sizeof(int)); /* print cache size this loop */
-        for (stride=1; stride <= csize/2; stride=stride*2) 
+        //for (stride=1; stride <= csize/2; stride=stride*2)
+	for (stride=1; stride <= 1; stride=stride*2) 
             {
             arr = new long int [csize];
             pattern_gen( arr, stride, csize );

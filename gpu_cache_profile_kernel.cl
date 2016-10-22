@@ -31,7 +31,7 @@ __kernel void stride_null_array(__global int* x, __global long int* stride, __gl
 
 __kernel void bw(__global unsigned char* src, __global unsigned char* dst)
 	{
-	int xid = get_global_id(0);
+	int xid = get_global_id(0) + get_global_size(0) * get_global_id(1) + get_global_size(0) * get_global_size(1) * get_global_id(2);
 	dst[xid] = src[xid];
 	}
 

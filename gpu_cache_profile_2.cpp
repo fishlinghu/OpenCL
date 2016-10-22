@@ -302,21 +302,21 @@ int main(int argc, char* argv[])
     cmPinnedBufOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, SIZE_OF_DATA, NULL, NULL);
     cmDevBufIn= clCreateBuffer(context, CL_MEM_READ_ONLY, SIZE_OF_DATA, NULL, NULL); 
     cmDevBufOut= clCreateBuffer(context, CL_MEM_WRITE_ONLY, SIZE_OF_DATA, NULL, NULL);
-
-    cDataIn = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufIn, CL_TRUE, CL_MAP_WRITE, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
-    cDataOut = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufOut, CL_TRUE, CL_MAP_READ, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
-
+	//cout << 1 << endl;
+    //cDataIn = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufIn, CL_TRUE, CL_MAP_WRITE, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
+    //cDataOut = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufOut, CL_TRUE, CL_MAP_READ, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
+	//cout << 2 << endl;
     cDataIn = (unsigned char*) malloc(sizeof(unsigned char) * SIZE_OF_DATA);
     for( i = 0; i < SIZE_OF_DATA; ++i)
         {
         cDataIn[i] = (unsigned char)(i & 0xff); 
         }
-
+	//cout << 3 << endl;
     double trans_start, trans_end;
     trans_start = gettime();
     clEnqueueWriteBuffer(queue, cmDevBufIn, CL_TRUE, 0, SIZE_OF_DATA, cDataIn, 0, NULL, NULL);
     trans_end = gettime();
-
+	//cout << "What?????" << endl;
     cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
     if(program == 0) 
         {
@@ -357,10 +357,13 @@ int main(int argc, char* argv[])
     clFinish(queue);
     lastsec = gettime();
     do sec0 = gettime(); while (sec0 == lastsec);
-
+	cout << 1 << endl;
     err = clEnqueueNDRangeKernel(queue, bw, 1, 0, &global_work_size, &local_work_size, 0, 0, &event);
-    clWaitForEvents(1 , &event);
-    sec1 = gettime(); /* end timer */
+    cout << 2 << endl;
+	//clWaitForEvents(1 , &event);
+	clFinish(queue);
+cout << 3 << endl;    
+sec1 = gettime(); /* end timer */
     //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
     //cout << x[0] << endl;
 
@@ -371,7 +374,7 @@ int main(int argc, char* argv[])
     clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(time_end), &time_end, NULL);
     total_time = time_end - time_start;
 
-
+	cout << sec << endl;
     clReleaseKernel(bw);
     clReleaseProgram(program);
     clReleaseMemObject(cmPinnedBufIn);

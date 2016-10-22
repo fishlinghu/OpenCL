@@ -262,8 +262,9 @@ int main(int argc, char* argv[])
     cl_event event;
 
     clFinish(queue);
-    lastsec = gettime();
-    do sec0 = gettime(); while (sec0 == lastsec);
+    //lastsec = gettime();
+    //do sec0 = gettime(); while (sec0 == lastsec);
+    sec0 = gettime();
 	//cout << 1111 << endl;
     err = clEnqueueNDRangeKernel(queue, bw, 3, NULL, global_work_size, NULL, 0, 0, &event);
     //clWaitForEvents(1 , &event);
@@ -315,7 +316,7 @@ int main(int argc, char* argv[])
         {
         label(csize*sizeof(int)); /* print cache size this loop */
         //for (stride=1; stride <= csize/2; stride=stride*2)
-	for (stride=1; stride <= 1; stride=stride*2) 
+	for (stride=1; stride <= csize/2; stride=stride*2) 
             {
             arr = new long int [csize];
             pattern_gen( arr, stride, csize );

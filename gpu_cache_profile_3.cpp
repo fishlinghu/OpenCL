@@ -189,15 +189,15 @@ int main(int argc, char* argv[])
     unsigned char* cDataIn = NULL; 
     unsigned char* cDataOut = NULL; 
 
-    cmPinnedBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, SIZE_OF_DATA, NULL, NULL); 
-    cmPinnedBufOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, SIZE_OF_DATA, NULL, NULL);
-    cmDevBufIn= clCreateBuffer(context, CL_MEM_READ_ONLY, SIZE_OF_DATA, NULL, NULL); 
-    cmDevBufOut= clCreateBuffer(context, CL_MEM_WRITE_ONLY, SIZE_OF_DATA, NULL, NULL);
+    cmPinnedBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, sizeof(unsigned char) * SIZE_OF_DATA * 64, NULL, NULL); 
+    cmPinnedBufOut = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR, sizeof(unsigned char) * SIZE_OF_DATA * 64, NULL, NULL);
+    cmDevBufIn= clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(unsigned char) * SIZE_OF_DATA * 64, NULL, NULL); 
+    cmDevBufOut= clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(unsigned char) * SIZE_OF_DATA * 64, NULL, NULL);
 
-    cDataIn = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufIn, CL_TRUE, CL_MAP_WRITE, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
-    cDataOut = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufOut, CL_TRUE, CL_MAP_READ, 0, SIZE_OF_DATA, 0, NULL, NULL, NULL);
+    cDataIn = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufIn, CL_TRUE, CL_MAP_WRITE, 0, sizeof(unsigned char) * SIZE_OF_DATA * 64, 0, NULL, NULL, NULL);
+    cDataOut = (unsigned char*)clEnqueueMapBuffer(queue, cmPinnedBufOut, CL_TRUE, CL_MAP_READ, 0, sizeof(unsigned char) * SIZE_OF_DATA * 64, 0, NULL, NULL, NULL);
 
-    cDataIn = (unsigned char*) malloc(sizeof(unsigned char) * SIZE_OF_DATA);
+    cDataIn = (unsigned char*) malloc(sizeof(unsigned char) * SIZE_OF_DATA * 64);
 
     int i;
 
@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 
     double trans_start, trans_end;
     trans_start = gettime();
-    clEnqueueWriteBuffer(queue, cmDevBufIn, CL_TRUE, 0, SIZE_OF_DATA, cDataIn, 0, NULL, NULL);
+    clEnqueueWriteBuffer(queue, cmDevBufIn, CL_TRUE, 0, sizeof(unsigned char) * SIZE_OF_DATA * 64, cDataIn, 0, NULL, NULL);
     trans_end = gettime();
 
     cl_program program = load_program(context, "gpu_cache_profile_kernel.cl");
@@ -247,14 +247,14 @@ int main(int argc, char* argv[])
   	printf("  CL_KERNEL_LOCAL_MEM_SIZE\t%u\n", local_mem_size);
 
 	//CL_DEVICE_MAX_WORK_ITEM_SIZES
-     	size_t workitem_size[3];
-       	clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_COMPILE_WORK_GROUP_SIZE, sizeof(workitem_size), &workitem_size, NULL);
-        printf("  CL_KERNEL_COMPILE_WORK_GROUP_SIZES:\t%u / %u / %u \n", workitem_size[0], workitem_size[1], workitem_size[2]);
+    size_t workitem_size[3];
+    clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_COMPILE_WORK_GROUP_SIZE, sizeof(workitem_size), &workitem_size, NULL);
+    printf("  CL_KERNEL_COMPILE_WORK_GROUP_SIZES:\t%u / %u / %u \n", workitem_size[0], workitem_size[1], workitem_size[2]);
   
         // CL_DEVICE_MAX_WORK_GROUP_SIZE
-        size_t workgroup_size;
-        clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_WORK_GROUP_SIZE, sizeof(workgroup_size), &workgroup_size, NULL);
-        printf("  CL_KERNEL_WORK_GROUP_SIZE:\t%u\n", workgroup_size);
+    size_t workgroup_size;
+    clGetKernelWorkGroupInfo(bw, devices_for_compute[0], CL_KERNEL_WORK_GROUP_SIZE, sizeof(workgroup_size), &workgroup_size, NULL);
+    printf("  CL_KERNEL_WORK_GROUP_SIZE:\t%u\n", workgroup_size);
                  
     size_t global_work_size[3] = {256, 256, 256};
     size_t local_work_size[3] = {1, 1, 1};
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
 	//cout << 1111 << endl;
     err = clEnqueueNDRangeKernel(queue, bw, 3, NULL, global_work_size, NULL, 0, 0, &event);
     //clWaitForEvents(1 , &event);
-    	clFinish(queue);
+    clFinish(queue);
 	sec1 = gettime(); /* end timer */
     //err = clEnqueueReadBuffer(queue, cl_x, CL_TRUE, 0, sizeof(cl_long) * csize, &x[0], 0, 0, 0);
     //cout << x[0] << endl;
